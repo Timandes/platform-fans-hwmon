@@ -35,7 +35,7 @@ Examples of backend responsibilities:
 Examples of platform descriptor responsibilities:
 
 - DMI board and product names.
-- Secondary identifier checks.
+- secondary identifier checks.
 - Fan labels.
 - Per-fan register offsets or method names.
 - Real-hardware validation notes.
