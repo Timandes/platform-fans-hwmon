@@ -148,6 +148,7 @@ class StaticProjectTests(unittest.TestCase):
             self.assertIn(text, readme)
 
         self.assertIn("[INSTALL.md](INSTALL.md)", readme)
+        self.assertIn("[README.zh_CN.md](README.zh_CN.md)", readme)
 
     def test_install_document_covers_install_and_uninstall(self):
         install_doc = self.read("INSTALL.md")
@@ -163,6 +164,44 @@ class StaticProjectTests(unittest.TestCase):
             "sensors | sed -n '/intel_nuc_ec/,/^$/p'",
         ):
             self.assertIn(text, install_doc)
+
+        self.assertIn("[INSTALL.zh_CN.md](INSTALL.zh_CN.md)", install_doc)
+
+    def test_zh_cn_readme_is_complete_and_links_to_zh_cn_install(self):
+        readme = self.read("README.zh_CN.md")
+
+        for text in (
+            "只读 Linux hwmon 驱动",
+            "支持的硬件",
+            "暴露的传感器",
+            "fan1_input",
+            "SPG_EC",
+            "ELM_EC",
+            "[INSTALL.zh_CN.md](INSTALL.zh_CN.md)",
+            "GNU General Public License version 2",
+        ):
+            self.assertIn(text, readme)
+
+        self.assertNotIn("[INSTALL.md](INSTALL.md)", readme)
+
+    def test_zh_cn_install_is_complete_and_links_to_zh_cn_readme(self):
+        install_doc = self.read("INSTALL.zh_CN.md")
+
+        for text in (
+            "[README.zh_CN.md](README.zh_CN.md)",
+            "安装依赖",
+            "DKMS 安装",
+            "DKMS 卸载",
+            "手动构建和测试加载",
+            "手动清理",
+            "sudo ./scripts/install.sh",
+            "sudo ./scripts/uninstall.sh",
+            "sudo insmod intel_nuc_ec_hwmon.ko",
+            "sudo rmmod intel_nuc_ec_hwmon",
+        ):
+            self.assertIn(text, install_doc)
+
+        self.assertNotIn("[README.md](README.md)", install_doc)
 
 
 if __name__ == "__main__":

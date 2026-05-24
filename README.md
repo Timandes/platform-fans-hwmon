@@ -1,5 +1,7 @@
 # Intel NUC EC hwmon
 
+[README.zh_CN.md](README.zh_CN.md)
+
 Read-only Linux hwmon driver for Intel NUC9 EC V9 fan tachometers.
 
 This module exposes Intel NUC9 EC fan RPM values through the standard hwmon ABI so tools such as `sensors`, CoolerControl, and monitoring agents can read them as `fan1_input`, `fan2_input`, and `fan3_input`.

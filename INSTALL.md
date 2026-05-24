@@ -1,5 +1,7 @@
 # Installation
 
+[INSTALL.zh_CN.md](INSTALL.zh_CN.md)
+
 This project can be installed either as a DKMS-managed module or loaded manually for testing.
 
 Use DKMS for normal use. Manual loading is only intended for short validation sessions.
