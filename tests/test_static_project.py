@@ -203,6 +203,20 @@ class StaticProjectTests(unittest.TestCase):
 
         self.assertNotIn("[README.md](README.md)", install_doc)
 
+    def test_changelog_documents_initial_release(self):
+        changelog = self.read("CHANGELOG.md")
+
+        for text in (
+            "# Changelog",
+            "## [0.1.0]",
+            "Initial release",
+            "Intel NUC9 EC V9",
+            "fan1_input",
+            "DKMS",
+            "GPL-2.0",
+        ):
+            self.assertIn(text, changelog)
+
 
 if __name__ == "__main__":
     unittest.main()
