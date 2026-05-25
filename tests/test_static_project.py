@@ -112,6 +112,7 @@ class StaticProjectTests(unittest.TestCase):
                 "intel-nuc-ec-v9",
                 "EC MMIO backend",
                 "platform-scoped install",
+                "Runtime validated on NAS-11",
             ),
         )
 

@@ -24,6 +24,7 @@ Generalize the project into Platform Fans hwmon.
 - Static tests pass with `python3 -m unittest discover -s tests -q`.
 - Shell syntax checks pass for install, uninstall, and collection scripts.
 - Built `platform_fans_hwmon.ko` on fnOS / Debian 12 with kernel `6.18.18-trim`.
+- Runtime validated on NAS-11: `platform_fans_hwmon` loads, exports `intel_nuc_ec`, and reports CPU/System fan RPM through `sensors`.
 
 ## [0.1.0]
 
