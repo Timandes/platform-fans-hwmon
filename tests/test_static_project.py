@@ -97,6 +97,28 @@ class StaticProjectTests(unittest.TestCase):
         self.assertNotIn("intel-nuc-ec-hwmon", dkms)
         self.assertNotIn("intel_nuc_ec_hwmon", dkms)
 
+    def test_release_version_is_0_2_0_in_code_and_changelog(self):
+        changelog = self.read("CHANGELOG.md")
+        dkms = self.read("dkms.conf")
+        install = self.read("scripts/install.sh")
+        uninstall = self.read("scripts/uninstall.sh")
+
+        self.assert_contains_all(
+            changelog,
+            (
+                "## [0.2.0]",
+                "Platform Fans hwmon",
+                "platform_fans_hwmon",
+                "intel-nuc-ec-v9",
+                "EC MMIO backend",
+                "platform-scoped install",
+            ),
+        )
+
+        for text in (dkms, install, uninstall):
+            self.assertIn('PACKAGE_VERSION="0.2.0"', text)
+            self.assertNotIn('PACKAGE_VERSION="0.1.0"', text)
+
     def test_core_registers_platform_driver_and_hwmon(self):
         core = self.read("core/pfh-core.c")
 
