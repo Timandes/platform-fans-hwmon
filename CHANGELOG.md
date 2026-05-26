@@ -9,6 +9,8 @@ Generalize the project into Platform Fans hwmon.
 - Add `platform_fans_hwmon` as the generalized module name.
 - Add a reusable hwmon core, EC MMIO backend, and platform descriptor layout.
 - Add `intel-nuc-ec-v9` as the first platform descriptor while preserving the `intel_nuc_ec` hwmon name.
+- Add `ds2308-it8613e-sio` read-only platform support for ITE `IT8613E` Super I/O fan tachometers.
+- Add IT8613E fan visibility handling to hide invalid tach raw value `0x0000`.
 - Add platform-scoped install support with `--platform intel-nuc-ec-v9`.
 - Add platform contribution documentation, supported platform matrix, and a read-only platform information collection tool.
 
@@ -25,6 +27,7 @@ Generalize the project into Platform Fans hwmon.
 - Shell syntax checks pass for install, uninstall, and collection scripts.
 - Built `platform_fans_hwmon.ko` on fnOS / Debian 12 with kernel `6.18.18-trim`.
 - Runtime validated on NAS-11: `platform_fans_hwmon` loads, exports `intel_nuc_ec`, and reports CPU/System fan RPM through `sensors`.
+- Runtime validated on NAS-9: `platform_fans_hwmon` loads with `platform=ds2308-it8613e-sio`, exports `ds2308_it8613e`, reports fan1/fan2/fan3, and hides invalid fan4/fan5 channels.
 
 ## [0.1.0]
 

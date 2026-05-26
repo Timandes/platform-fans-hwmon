@@ -3,6 +3,7 @@
 | Platform ID | hwmon name | Backend | Status |
 | --- | --- | --- | --- |
 | `intel-nuc-ec-v9` | `intel_nuc_ec` | EC MMIO | Validated on Intel NUC9 EC V9 |
+| `ds2308-it8613e-sio` | `ds2308_it8613e` | IT8613E Super I/O | Validated on DS2308 / Dinson |
 | `minisforum-ms01-nct6775` | `nct6798` | Linux mainline `nct6775` | Validated on Minisforum MS-01 |
 
 ## intel-nuc-ec-v9
@@ -32,6 +33,37 @@ Exported fans:
 | `fan1_input` | CPU Fan | EC V9 register `0x41B` |
 | `fan2_input` | System Fan 1 | EC V9 register `0x41E` |
 | `fan3_input` | System Fan 2 | EC V9 register `0x421` |
+
+## ds2308-it8613e-sio
+
+This platform uses the project IT8613E Super I/O backend because
+`sensors-detect` reports the chip as `to-be-written` for this machine.
+
+Supported DMI matches:
+
+- Product name: `DS2308`
+- Board name: `Dinson`
+
+Detected sensor chip:
+
+```text
+ITE IT8613E Super IO Sensors
+ISA address 0x0a30
+```
+
+Exported fans:
+
+| Attribute | Label | Source |
+| --- | --- | --- |
+| `fan1_input` | Fan 1 | IT8613E tach registers `0x0d/0x18` |
+| `fan2_input` | Fan 2 | IT8613E tach registers `0x0e/0x19` |
+| `fan3_input` | Fan 3 | IT8613E tach registers `0x0f/0x1a` |
+| `fan4_input` | Fan 4 | IT8613E tach registers `0x80/0x81` |
+| `fan5_input` | Fan 5 | IT8613E tach registers `0x82/0x83` |
+
+The backend exposes `fan1_input` through `fan5_input` only when each channel
+has a valid tach register pair. Invalid tach raw value `0x0000` is hidden.
+Stopped or disconnected tach raw value `0xffff` is exposed as `0 RPM`.
 
 ## minisforum-ms01-nct6775
 

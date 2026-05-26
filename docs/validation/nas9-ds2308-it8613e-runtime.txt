@@ -1,0 +1,33 @@
+NAS-9 DS2308 IT8613E runtime validation
+
+Host:
+
+- `nas-9.timandes.net`
+- Kernel: `6.18.18-trim`
+- System: `DS2308`
+- Board: `Dinson`
+- Super I/O: ITE `IT8613E`, HWM base `0x0a30`
+
+Command:
+
+```bash
+ssh -t timandes@nas-9.timandes.net 'cd /tmp/platform-fans-hwmon-ds2308.SacDbW && sudo insmod ./platform_fans_hwmon.ko platform=ds2308-it8613e-sio && sensors && sudo rmmod platform_fans_hwmon'
+```
+
+Observed sensors output:
+
+```text
+ds2308_it8613e-isa-0000
+Adapter: ISA adapter
+Fan 1:          0 RPM
+Fan 2:       1167 RPM
+Fan 3:          0 RPM
+```
+
+Result:
+
+- `platform_fans_hwmon` loads with `platform=ds2308-it8613e-sio`.
+- hwmon device name is `ds2308_it8613e`.
+- fan1/fan3 were exposed as `0 RPM`, matching tach raw `0xffff`.
+- fan2 was exposed with a live RPM value.
+- fan4/fan5 were hidden, matching invalid tach raw `0x0000`.

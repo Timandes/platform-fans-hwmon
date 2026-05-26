@@ -2,7 +2,7 @@
 
 `platform-fans-hwmon` is a read-only Linux hwmon framework for platform-specific fan RPM sensors that are not already exposed by existing kernel drivers.
 
-The kernel module is `platform_fans_hwmon`. It provides a common hwmon core and platform-specific descriptors. The first supported platform is Intel NUC9 EC V9, exported as hwmon name `intel_nuc_ec`.
+The kernel module is `platform_fans_hwmon`. It provides a common hwmon core, reusable read backends, and platform-specific descriptors.
 
 This project exposes fan RPM values through the standard hwmon ABI so tools such as `sensors`, CoolerControl, and monitoring agents can read `fan*_input` and `fan*_label`.
 
@@ -10,13 +10,18 @@ This project exposes fan RPM values through the standard hwmon ABI so tools such
 
 See [docs/supported-platforms.md](docs/supported-platforms.md).
 
-Current platform:
+Current platforms:
 
 - `intel-nuc-ec-v9`
   - Intel NUC9 Extreme Compute Element / Kit
   - Intel NUC9 Pro Compute Element / Kit
   - EC identifiers: `SPG_EC` or `ELM_EC`
   - hwmon name: `intel_nuc_ec`
+- `ds2308-it8613e-sio`
+  - DS2308 / board `Dinson`
+  - Sensor chip: ITE `IT8613E`
+  - Exports valid `fan1` through `fan5` tachometers
+  - hwmon name: `ds2308_it8613e`
 
 Externally supported platforms:
 
@@ -38,6 +43,11 @@ fan2_input = EC V9 register 0x41E
 fan3_label = System Fan 2
 fan3_input = EC V9 register 0x421
 ```
+
+## DS2308 IT8613E Sensors
+
+`ds2308-it8613e-sio` exposes IT8613E fan tachometers as read-only hwmon fans.
+Channels whose tach register pair reads as invalid are hidden from hwmon.
 
 ## Install
 

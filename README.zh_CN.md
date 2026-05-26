@@ -2,7 +2,7 @@
 
 `platform-fans-hwmon` 是一个只读 Linux hwmon 框架，用于暴露现有内核驱动尚未支持的平台特定风扇转速传感器。
 
-内核模块名为 `platform_fans_hwmon`。它提供通用 hwmon core 和平台特定描述。第一个支持的平台是 Intel NUC9 EC V9，导出的 hwmon name 保持为 `intel_nuc_ec`。
+内核模块名为 `platform_fans_hwmon`。它提供通用 hwmon core、可复用读取后端和平台特定描述。
 
 本项目通过标准 hwmon ABI 暴露风扇 RPM，使 `sensors`、CoolerControl 和监控系统可以读取 `fan*_input` 与 `fan*_label`。
 
@@ -17,6 +17,11 @@
   - Intel NUC9 Pro Compute Element / Kit
   - EC identifier：`SPG_EC` 或 `ELM_EC`
   - hwmon name：`intel_nuc_ec`
+- `ds2308-it8613e-sio`
+  - DS2308 / board `Dinson`
+  - 传感器芯片：ITE `IT8613E`
+  - 暴露有效的 `fan1` 到 `fan5` tachometer
+  - hwmon name：`ds2308_it8613e`
 
 外部驱动支持的平台：
 
@@ -38,6 +43,11 @@ fan2_input = EC V9 register 0x41E
 fan3_label = System Fan 2
 fan3_input = EC V9 register 0x421
 ```
+
+## DS2308 IT8613E 传感器
+
+`ds2308-it8613e-sio` 将 IT8613E 风扇 tachometer 以只读 hwmon fan 形式暴露。
+tach 寄存器对读取为无效值的通道不会暴露到 hwmon。
 
 ## 安装
 

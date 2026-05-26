@@ -311,6 +311,98 @@ class StaticProjectTests(unittest.TestCase):
             ),
         )
 
+    def test_ds2308_it8613e_platform_defines_dmi_and_fan_mapping(self):
+        platform = self.read("platforms/ite/pfh-ds2308-it8613e.c")
+
+        self.assert_contains_all(
+            platform,
+            (
+                "const struct pfh_platform_desc pfh_ds2308_it8613e",
+                '.id = "ds2308-it8613e-sio"',
+                '.hwmon_name = "ds2308_it8613e"',
+                ".backend = &pfh_it8613e_sio_backend_ops",
+                "DMI_MATCH(DMI_PRODUCT_NAME, \"DS2308\")",
+                "DMI_MATCH(DMI_BOARD_NAME, \"Dinson\")",
+                "MODULE_DEVICE_TABLE(dmi, pfh_ds2308_it8613e_dmi_table)",
+                ".sio_addr = 0x2e",
+                ".expected_hwm_base = 0x0a30",
+                ".low_reg = 0x0d",
+                ".high_reg = 0x18",
+                ".low_reg = 0x0e",
+                ".high_reg = 0x19",
+                ".low_reg = 0x0f",
+                ".high_reg = 0x1a",
+                ".low_reg = 0x80",
+                ".high_reg = 0x81",
+                ".low_reg = 0x82",
+                ".high_reg = 0x83",
+                '"Fan 1"',
+                '"Fan 2"',
+                '"Fan 3"',
+                '"Fan 4"',
+                '"Fan 5"',
+            ),
+        )
+
+    def test_docs_cover_discovery_and_ds2308_it8613e_support(self):
+        readme = self.read("README.md")
+        readme_zh = self.read("README.zh_CN.md")
+        supported = self.read("docs/supported-platforms.md")
+        changelog = self.read("CHANGELOG.md")
+        validation = self.read("docs/validation/nas9-ds2308-it8613e-runtime.txt")
+
+        self.assert_contains_all(
+            readme,
+            (
+                "sudo sensors-detect --auto",
+                "prefer loading and documenting that driver",
+                "`ds2308-it8613e-sio`",
+                "ITE `IT8613E`",
+            ),
+        )
+        self.assert_contains_all(
+            readme_zh,
+            (
+                "sudo sensors-detect --auto",
+                "优先加载并文档化该驱动",
+                "`ds2308-it8613e-sio`",
+                "ITE `IT8613E`",
+            ),
+        )
+        self.assert_contains_all(
+            supported,
+            (
+                "| `ds2308-it8613e-sio` | `ds2308_it8613e` | IT8613E Super I/O | Validated on DS2308 / Dinson |",
+                "## ds2308-it8613e-sio",
+                "Product name: `DS2308`",
+                "Board name: `Dinson`",
+                "`fan1_input` through `fan5_input`",
+                "Invalid tach raw value `0x0000` is hidden",
+                "Stopped or disconnected tach raw value `0xffff` is exposed as `0 RPM`",
+            ),
+        )
+        self.assert_contains_all(
+            changelog,
+            (
+                "`ds2308-it8613e-sio`",
+                "ITE `IT8613E`",
+                "hide invalid tach raw value `0x0000`",
+                "Runtime validated on NAS-9",
+            ),
+        )
+        self.assert_contains_all(
+            validation,
+            (
+                "ssh -t timandes@nas-9.timandes.net",
+                "platform=ds2308-it8613e-sio",
+                "ds2308_it8613e-isa-0000",
+                "Fan 1:          0 RPM",
+                "Fan 2:       1167 RPM",
+                "Fan 3:          0 RPM",
+                "fan4/fan5 were hidden",
+            ),
+        )
+
     def test_install_scripts_manage_generalized_dkms_package(self):
         install = self.read("scripts/install.sh")
         uninstall = self.read("scripts/uninstall.sh")
