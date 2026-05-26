@@ -4,7 +4,7 @@
 
 **Goal:** Validate whether an IT8613E-capable `it87` driver can expose NAS-9 fan RPM readings, then document NAS-9 as externally supported only if runtime validation succeeds.
 
-**Architecture:** Treat NAS-9 as an external Linux hwmon driver validation task. Build and load a temporary IT8613E-capable `it87.ko` on NAS-9, collect fan RPM evidence through the normal hwmon ABI, and update this project only with documentation and static tests when validation succeeds. If validation fails, record the failed evidence and stop before designing any `platform_fans_hwmon` backend.
+**Architecture:** Treat NAS-9 as an external Linux hwmon driver validation task. First reject the withdrawn v4 IT8613E patch series, then identify a fixed IT8613E candidate before any module is built or loaded on NAS-9. Only after a fixed candidate passes source inspection should the worker build a temporary `it87.ko`, collect fan RPM evidence through the normal hwmon ABI, and update this project with documentation and static tests.
 
 **Tech Stack:** Linux hwmon ABI, `it87` kernel module, Debian 12 remote shell, kernel module build tools, POSIX shell, Python `unittest` static tests, Markdown documentation.
 
@@ -29,8 +29,8 @@ This plan covers one subsystem: validating external `it87` support for the NAS-9
 
 Remote-only temporary files on NAS-9:
 
-- Create: `/tmp/it8613e-it87-upstream/`
-  - Temporary build workspace for the IT8613E-capable `it87` module.
+- Create: `/tmp/it8613e-it87-candidate/`
+  - Temporary build workspace for the selected fixed IT8613E candidate.
 - Create: `/tmp/nas9-it8613e-it87-validation.txt`
   - Remote validation transcript.
 - Create: `/tmp/nas9-it8613e-it87-failed.txt`
@@ -90,20 +90,27 @@ ssh timandes@nas-9.timandes.net 'grep -E "DS2308|Dinson|IT8613E|0xa30|to-be-writ
 
 Expected: output includes `DS2308`, `Dinson`, `ITE IT8613E Super IO Sensors`, `address 0xa30`, `driver \`to-be-written\``, and no nonzero `fan*_input` line.
 
-## Task 2: Build A Temporary IT8613E-Capable it87 Module
+## Task 2: Select A Fixed IT8613E Candidate Before Building
 
 **Files:**
-- Remote create: `/tmp/it8613e-it87-upstream/`
+- Remote create: `/tmp/it8613e-it87-candidate-notes.txt`
+- Remote create on failure: `/tmp/nas9-it8613e-it87-failed.txt`
 
-- [ ] **Step 1: Install remote build prerequisites**
+- [ ] **Step 1: Record the withdrawn v4 patch safety gate**
 
 Run:
 
 ```bash
-ssh -t timandes@nas-9.timandes.net 'sudo apt-get update && sudo apt-get install -y git build-essential bc bison flex libelf-dev libssl-dev dwarves kmod curl ca-certificates b4'
+ssh timandes@nas-9.timandes.net 'cat > /tmp/it8613e-it87-candidate-notes.txt <<'"'"'EOF'"'"'
+The upstream v4 IT8613E patch series is withdrawn.
+The worker must not load the withdrawn v4 patch series on NAS-9.
+Known issue: NULL pointer dereference in the IT8613E probe path.
+A fixed IT8613E candidate must be selected before any temporary it87.ko is built or loaded.
+EOF
+cat /tmp/it8613e-it87-candidate-notes.txt'
 ```
 
-Expected: `apt-get` exits 0 and `b4` is available on NAS-9.
+Expected: output includes `withdrawn`, `NULL pointer`, `must not load the withdrawn v4 patch series`, and `fixed IT8613E candidate`.
 
 - [ ] **Step 2: Verify the running kernel can build external modules**
 
@@ -119,55 +126,56 @@ Expected: output starts with `kernel build tree present:`. If this fails, stop a
 ssh timandes@nas-9.timandes.net 'printf "%s\n" "missing kernel build tree for $(uname -r)" > /tmp/nas9-it8613e-it87-failed.txt'
 ```
 
-- [ ] **Step 3: Fetch Linux source and apply the IT8613E patch series**
+- [ ] **Step 3: Confirm the withdrawn v4 patch is not an acceptable runtime candidate**
 
 Run:
 
 ```bash
-ssh timandes@nas-9.timandes.net 'set -eu
-rm -rf /tmp/it8613e-it87-upstream
-mkdir -p /tmp/it8613e-it87-upstream
-cd /tmp/it8613e-it87-upstream
-git clone --depth=1 --branch v6.18 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git linux
-cd linux
-b4 am -o ../patches 20260114221210.98071-1-yahoo@perenite.com
-git am ../patches/*.mbx
-grep -n "IT8613E" Documentation/hwmon/it87.rst drivers/hwmon/it87.c
-'
-```
-
-Expected: `git am` exits 0, and `grep` prints `IT8613E` matches in both `Documentation/hwmon/it87.rst` and `drivers/hwmon/it87.c`.
-
-- [ ] **Step 4: Build only the patched it87 module out of tree**
-
-Run:
-
-```bash
-ssh timandes@nas-9.timandes.net 'set -eu
-cd /tmp/it8613e-it87-upstream
-rm -rf module
-mkdir module
-cp linux/drivers/hwmon/it87.c module/it87.c
-cat > module/Makefile <<'"'"'EOF'"'"'
-obj-m := it87.o
+ssh timandes@nas-9.timandes.net 'cat >> /tmp/it8613e-it87-candidate-notes.txt <<'"'"'EOF'"'"'
+Rejected candidate:
+- Source: https://www.spinics.net/lists/kernel/msg6003724.html
+- Follow-up: https://www.spinics.net/lists/kernel/msg6009013.html
+- Reason: the series was dropped after a NULL pointer issue was reported.
 EOF
-make -C /lib/modules/$(uname -r)/build M=$PWD/module W=1 modules
-/usr/sbin/modinfo module/it87.ko | egrep "^(filename|description|vermagic|depends):"
-strings module/it87.ko | grep -E "IT8613E|it8613"
-'
+grep -E "Rejected candidate|6003724|6009013|NULL pointer" /tmp/it8613e-it87-candidate-notes.txt'
 ```
 
-Expected: build exits 0, `modinfo` reports `vermagic` for `6.18.18-trim`, and `strings` shows `IT8613E` or `it8613`.
+Expected: output records the rejected candidate and the NULL pointer reason.
 
-## Task 3: Runtime-Validate The Temporary it87 Module
+- [ ] **Step 4: Stop if no fixed candidate is available**
+
+Run:
+
+```bash
+ssh timandes@nas-9.timandes.net 'cat > /tmp/nas9-it8613e-it87-failed.txt <<'"'"'EOF'"'"'
+No fixed IT8613E candidate has been selected.
+The withdrawn v4 upstream patch series was not loaded.
+Next step: find a maintained IT8613E-capable it87 candidate or start a new board-specific read-only backend design.
+EOF
+cat /tmp/nas9-it8613e-it87-failed.txt'
+```
+
+Expected: output states that no module was loaded. If a fixed candidate is found later, replace this stop step with candidate-specific source inspection and build steps in a new plan update before loading anything.
+
+## Task 3: Runtime-Validate A Fixed Temporary it87 Module
 
 **Files:**
 - Remote create: `/tmp/nas9-it8613e-it87-validation.txt`
 - Remote create on failure: `/tmp/nas9-it8613e-it87-failed.txt`
 
-- [ ] **Step 1: Load the temporary module and collect hwmon output**
+- [ ] **Step 1: Verify the candidate safety notes before loading**
 
 Run:
+
+```bash
+ssh timandes@nas-9.timandes.net 'grep -E "fixed IT8613E candidate|must not load the withdrawn v4 patch series|NULL pointer" /tmp/it8613e-it87-candidate-notes.txt'
+```
+
+Expected: output includes the safety gate. If `/tmp/it8613e-it87-candidate/module/it87.ko` does not exist, stop here and use Task 7 failure handling.
+
+- [ ] **Step 2: Load the fixed temporary module and collect hwmon output**
+
+Run this only after `/tmp/it8613e-it87-candidate/module/it87.ko` exists and its source has been inspected to avoid the withdrawn v4 NULL pointer issue:
 
 ```bash
 ssh -t timandes@nas-9.timandes.net 'sudo sh -c '"'"'
@@ -177,14 +185,14 @@ fail=/tmp/nas9-it8613e-it87-failed.txt
 rm -f "$out" "$fail"
 rmmod it87 2>/dev/null || true
 rmmod hwmon_vid 2>/dev/null || true
-insmod /tmp/it8613e-it87-upstream/module/it87.ko
+insmod /tmp/it8613e-it87-candidate/module/it87.ko
 {
   echo "== date =="
   date -Is
   echo "== lsmod =="
   lsmod | egrep "^(it87|hwmon_vid)"
   echo "== modinfo =="
-  /usr/sbin/modinfo /tmp/it8613e-it87-upstream/module/it87.ko | egrep "^(filename|description|vermagic|depends):"
+  /usr/sbin/modinfo /tmp/it8613e-it87-candidate/module/it87.ko | egrep "^(filename|description|vermagic|depends):"
   echo "== hwmon =="
   for h in /sys/class/hwmon/hwmon*; do
     [ -e "$h/name" ] || continue
@@ -216,7 +224,7 @@ fi
 
 Expected: command exits 0. The transcript contains an IT8613E-backed hwmon device and at least one nonzero `fan*_input`.
 
-- [ ] **Step 2: Remove the temporary module after capture**
+- [ ] **Step 3: Remove the temporary module after capture**
 
 Run:
 
@@ -226,7 +234,7 @@ ssh -t timandes@nas-9.timandes.net 'sudo sh -c '"'"'rmmod it87 2>/dev/null || tr
 
 Expected: no `it87` line remains in `lsmod`.
 
-- [ ] **Step 3: Inspect the captured transcript**
+- [ ] **Step 4: Inspect the captured transcript**
 
 Run:
 

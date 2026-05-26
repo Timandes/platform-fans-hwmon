@@ -376,6 +376,36 @@ class StaticProjectTests(unittest.TestCase):
         self.assertNotIn("[INSTALL.md](INSTALL.md)", readme)
         self.assertNotIn("[README.md](README.md)", install_doc)
 
+    def test_nas9_it8613e_plan_rejects_withdrawn_v4_patch(self):
+        spec = self.read("docs/superpowers/specs/2026-05-26-nas9-it8613e-design.md")
+        plan = self.read("docs/superpowers/plans/2026-05-26-nas9-it8613e-validation.md")
+
+        self.assert_contains_all(
+            spec + plan,
+            (
+                "withdrawn",
+                "NULL pointer",
+                "must not load the withdrawn v4 patch series",
+                "fixed IT8613E candidate",
+            ),
+        )
+        self.assertNotIn("b4 am -o ../patches 20260114221210.98071-1-yahoo@perenite.com", plan)
+        self.assertNotIn("git am ../patches/*.mbx", plan)
+
+    def test_nas9_it8613e_failure_evidence_is_recorded(self):
+        failure = self.read("docs/validation/nas9-it8613e-it87-failed.txt")
+        supported = self.read("docs/supported-platforms.md")
+
+        self.assert_contains_all(
+            failure,
+            (
+                "No fixed IT8613E candidate has been selected",
+                "withdrawn v4 upstream patch series was not loaded",
+                "NULL pointer",
+            ),
+        )
+        self.assertNotIn("nas9-ds2308-it8613e-it87", supported)
+
     def test_collect_platform_info_script_is_read_only(self):
         script = self.read("tools/collect-platform-info.sh")
 

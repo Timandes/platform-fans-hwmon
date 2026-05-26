@@ -1,0 +1,4 @@
+No fixed IT8613E candidate has been selected.
+The withdrawn v4 upstream patch series was not loaded.
+Known issue: NULL pointer dereference in the IT8613E probe path.
+Next step: find a maintained IT8613E-capable it87 candidate or start a new board-specific read-only backend design.
