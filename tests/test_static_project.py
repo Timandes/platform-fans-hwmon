@@ -226,6 +226,47 @@ class StaticProjectTests(unittest.TestCase):
             ),
         )
 
+    def test_it8613e_sio_backend_is_ds2308_safe_and_read_only(self):
+        header = self.read("backends/pfh-it8613e-sio.h")
+        backend = self.read("backends/pfh-it8613e-sio.c")
+
+        self.assert_contains_all(
+            header,
+            (
+                "struct pfh_it8613e_sio_config",
+                "struct pfh_it8613e_sio_fan",
+                "extern const struct pfh_backend_ops pfh_it8613e_sio_backend_ops",
+            ),
+        )
+        self.assert_contains_all(
+            backend,
+            (
+                "#define PFH_IT8613E_DEVID 0x8613",
+                "#define PFH_IT8613E_PME_LDN 0x04",
+                "#define PFH_IT8613E_EXPECTED_BASE 0x0a30",
+                "#define PFH_IT8613E_HWM_ADDR_OFFSET 5",
+                "#define PFH_IT8613E_HWM_DATA_OFFSET 6",
+                "request_muxed_region(config->sio_addr, 2,",
+                "request_region(data->hwm_base + PFH_IT8613E_HWM_ADDR_OFFSET, 2,",
+                "pfh_it8613e_sio_read_raw",
+                "pfh_it8613e_sio_raw_to_rpm",
+                "raw == 0x0000",
+                "raw == 0xffff",
+                "1350000",
+                ".fan_visible = pfh_it8613e_sio_fan_visible",
+                ".read_fan = pfh_it8613e_sio_read_fan",
+            ),
+        )
+        forbidden = (
+            "hwmon_pwm",
+            "pwm_enable",
+            "PFH_IT8613E_REG_FAN_CTL",
+            "PFH_IT8613E_REG_PWM",
+            "outb(value, data->hwm_base + PFH_IT8613E_HWM_DATA_OFFSET)",
+        )
+        for item in forbidden:
+            self.assertNotIn(item, backend)
+
     def test_nuc9_platform_preserves_current_dmi_guard_and_fan_mapping(self):
         platform = self.read("platforms/intel/pfh-intel-nuc-ec-v9.c")
 
