@@ -18,6 +18,14 @@
   - EC identifier：`SPG_EC` 或 `ELM_EC`
   - hwmon name：`intel_nuc_ec`
 
+外部驱动支持的平台：
+
+- `minisforum-ms01-nct6775`
+  - 铭凡 MS-01 / Venus Series / board `AHWSA`
+  - 传感器芯片：Nuvoton `NCT6798D`
+  - 已有 Linux hwmon 驱动：`nct6775`
+  - hwmon name：`nct6798`
+
 ## Intel NUC9 EC V9 传感器
 
 ```text
@@ -47,6 +55,24 @@ sudo modprobe platform_fans_hwmon
 ```bash
 sudo ./scripts/install.sh --platform intel-nuc-ec-v9
 ```
+
+## 硬件探测
+
+新增 `platform_fans_hwmon` 后端或平台描述之前，先检查 Linux 是否已经通过已有 hwmon 驱动支持这块主板：
+
+```bash
+sudo sensors-detect --auto
+sensors
+```
+
+如果 `sensors-detect` 推荐了 `nct6775` 这类已有 Linux hwmon 驱动，优先加载并文档化该驱动，不要在本项目里重复实现芯片支持。例如铭凡 MS-01 通过 `nct6775` 暴露 Nuvoton `NCT6798D` Super I/O 传感器：
+
+```bash
+sudo modprobe nct6775
+echo nct6775 | sudo tee /etc/modules-load.d/nct6775.conf
+```
+
+只有在现有 mainline 驱动无法暴露所需风扇 RPM 时，才新增 `platform_fans_hwmon` 实现。
 
 ## 贡献平台支持
 

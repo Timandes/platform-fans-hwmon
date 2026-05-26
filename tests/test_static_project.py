@@ -285,6 +285,9 @@ class StaticProjectTests(unittest.TestCase):
                 "Intel NUC9 EC V9",
                 "read-only",
                 "does not expose PWM controls",
+                "sudo sensors-detect --auto",
+                "nct6775",
+                "existing Linux hwmon driver",
                 "[INSTALL.md](INSTALL.md)",
                 "[README.zh_CN.md](README.zh_CN.md)",
                 "[docs/contributing-platform.md](docs/contributing-platform.md)",
@@ -332,6 +335,11 @@ class StaticProjectTests(unittest.TestCase):
                 "NUC9i7QNX",
                 "SPG_EC",
                 "ELM_EC",
+                "minisforum-ms01-nct6775",
+                "NCT6798D",
+                "nct6798",
+                "fan1_input",
+                "fan2_input",
             ),
         )
 
@@ -348,6 +356,9 @@ class StaticProjectTests(unittest.TestCase):
                 "平台特定风扇转速",
                 "Intel NUC9 EC V9",
                 "只读",
+                "sudo sensors-detect --auto",
+                "nct6775",
+                "已有 Linux hwmon 驱动",
                 "[INSTALL.zh_CN.md](INSTALL.zh_CN.md)",
             ),
         )

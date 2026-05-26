@@ -18,6 +18,14 @@ Current platform:
   - EC identifiers: `SPG_EC` or `ELM_EC`
   - hwmon name: `intel_nuc_ec`
 
+Externally supported platforms:
+
+- `minisforum-ms01-nct6775`
+  - Minisforum MS-01 / Venus Series / board `AHWSA`
+  - Sensor chip: Nuvoton `NCT6798D`
+  - Existing Linux hwmon driver: `nct6775`
+  - hwmon name: `nct6798`
+
 ## Intel NUC9 EC V9 Sensors
 
 ```text
@@ -47,6 +55,24 @@ Platform-scoped install:
 ```bash
 sudo ./scripts/install.sh --platform intel-nuc-ec-v9
 ```
+
+## Hardware Discovery
+
+Before adding a new `platform_fans_hwmon` backend or platform descriptor, first check whether Linux already supports the board through an existing hwmon driver:
+
+```bash
+sudo sensors-detect --auto
+sensors
+```
+
+If `sensors-detect` recommends an existing Linux hwmon driver such as `nct6775`, prefer loading and documenting that driver instead of duplicating chip support in this project. For example, Minisforum MS-01 exposes its Nuvoton `NCT6798D` Super I/O sensors through `nct6775`:
+
+```bash
+sudo modprobe nct6775
+echo nct6775 | sudo tee /etc/modules-load.d/nct6775.conf
+```
+
+Add a `platform_fans_hwmon` implementation only when existing mainline drivers cannot expose the required fan RPM values.
 
 ## Contributing Platform Support
 
