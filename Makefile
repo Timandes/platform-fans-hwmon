@@ -7,7 +7,9 @@ obj-m += platform_fans_hwmon.o
 platform_fans_hwmon-y := \
 	core/pfh-core.o \
 	backends/pfh-ec-mmio.o \
-	platforms/intel/pfh-intel-nuc-ec-v9.o
+	backends/pfh-it8613e-sio.o \
+	platforms/intel/pfh-intel-nuc-ec-v9.o \
+	platforms/ite/pfh-ds2308-it8613e.o
 
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules

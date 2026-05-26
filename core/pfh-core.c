@@ -21,6 +21,7 @@ MODULE_PARM_DESC(platform, "Optional platform id to select, for example intel-nu
 
 static const struct pfh_platform_desc * const pfh_platforms[] = {
 	&pfh_intel_nuc_ec_v9,
+	&pfh_ds2308_it8613e,
 	NULL
 };
 
@@ -55,12 +56,16 @@ static umode_t pfh_hwmon_is_visible(const void *drvdata,
 				    enum hwmon_sensor_types type,
 				    u32 attr, int channel)
 {
-	const struct pfh_device *pfh = drvdata;
+	struct pfh_device *pfh = (struct pfh_device *)drvdata;
 
 	if (type != hwmon_fan)
 		return 0;
 
 	if (channel < 0 || channel >= pfh->desc->num_fans)
+		return 0;
+
+	if (pfh->desc->backend->fan_visible &&
+	    !pfh->desc->backend->fan_visible(pfh, &pfh->desc->fans[channel]))
 		return 0;
 
 	switch (attr) {

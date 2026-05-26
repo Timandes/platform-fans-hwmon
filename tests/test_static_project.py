@@ -168,6 +168,37 @@ class StaticProjectTests(unittest.TestCase):
         self.assertNotIn("hwmon_pwm", core)
         self.assertNotIn("pwm", core.lower())
 
+    def test_core_supports_backend_controlled_fan_visibility(self):
+        core = self.read("core/pfh-core.c")
+        header = self.read("core/pfh-core.h")
+
+        self.assert_contains_all(
+            header,
+            (
+                "bool (*fan_visible)(struct pfh_device *pfh,",
+                "pfh_ds2308_it8613e",
+            ),
+        )
+        self.assert_contains_all(
+            core,
+            (
+                "&pfh_ds2308_it8613e",
+                "pfh->desc->backend->fan_visible",
+                "!pfh->desc->backend->fan_visible(pfh, &pfh->desc->fans[channel])",
+            ),
+        )
+
+    def test_makefile_builds_ds2308_it8613e_objects(self):
+        makefile = self.read("Makefile")
+
+        self.assert_contains_all(
+            makefile,
+            (
+                "backends/pfh-it8613e-sio.o",
+                "platforms/ite/pfh-ds2308-it8613e.o",
+            ),
+        )
+
     def test_ec_mmio_backend_preserves_lpc_lgmr_and_identifier_logic(self):
         backend = self.read("backends/pfh-ec-mmio.c")
         backend_header = self.read("backends/pfh-ec-mmio.h")

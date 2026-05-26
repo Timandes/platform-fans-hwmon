@@ -13,6 +13,8 @@ struct pfh_platform_desc;
 
 struct pfh_backend_ops {
 	int (*probe)(struct pfh_device *pfh);
+	bool (*fan_visible)(struct pfh_device *pfh,
+			    const struct pfh_fan_channel *fan);
 	int (*read_fan)(struct pfh_device *pfh,
 			const struct pfh_fan_channel *fan,
 			long *rpm);
@@ -43,5 +45,6 @@ struct pfh_device {
 };
 
 extern const struct pfh_platform_desc pfh_intel_nuc_ec_v9;
+extern const struct pfh_platform_desc pfh_ds2308_it8613e;
 
 #endif /* PFH_CORE_H */
