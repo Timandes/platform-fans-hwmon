@@ -1,31 +1,37 @@
-# Intel NUC EC hwmon
+# Platform Fans hwmon
 
-[README.zh_CN.md](README.zh_CN.md)
+`platform-fans-hwmon` is a read-only Linux hwmon framework for platform-specific fan RPM sensors that are not already exposed by existing kernel drivers.
 
-Read-only Linux hwmon driver for Intel NUC9 EC V9 fan tachometers.
+The kernel module is `platform_fans_hwmon`. It provides a common hwmon core, reusable read backends, and platform-specific descriptors.
 
-This module exposes Intel NUC9 EC fan RPM values through the standard hwmon ABI so tools such as `sensors`, CoolerControl, and monitoring agents can read them as `fan1_input`, `fan2_input`, and `fan3_input`.
+This project exposes fan RPM values through the standard hwmon ABI so tools such as `sensors`, CoolerControl, and monitoring agents can read `fan*_input` and `fan*_label`.
 
-## Supported Hardware
+## Supported Platforms
 
-First version support is intentionally narrow:
+See [docs/supported-platforms.md](docs/supported-platforms.md).
 
-- Intel NUC9 Extreme Compute Element / Kit:
-  - `NUC9i5QNB`
-  - `NUC9i7QNB`
-  - `NUC9i9QNB`
-  - `NUC9i5QNX`
-  - `NUC9i7QNX`
-  - `NUC9i9QNX`
-- Intel NUC9 Pro Compute Element / Kit:
-  - `NUC9V7QNB`
-  - `NUC9VXQNB`
-  - `NUC9V7QNX`
-  - `NUC9VXQNX`
+Current platforms:
 
-The module also requires the Intel NUC EC identifier to be `SPG_EC` or `ELM_EC`.
+- `intel-nuc-ec-v9`
+  - Intel NUC9 Extreme Compute Element / Kit
+  - Intel NUC9 Pro Compute Element / Kit
+  - EC identifiers: `SPG_EC` or `ELM_EC`
+  - hwmon name: `intel_nuc_ec`
+- `ds2308-it8613e-sio`
+  - DS2308 / board `Dinson`
+  - Sensor chip: ITE `IT8613E`
+  - Exports valid `fan1` through `fan5` tachometers
+  - hwmon name: `ds2308_it8613e`
 
-## Exposed Sensors
+Externally supported platforms:
+
+- `minisforum-ms01-nct6775`
+  - Minisforum MS-01 / Venus Series / board `AHWSA`
+  - Sensor chip: Nuvoton `NCT6798D`
+  - Existing Linux hwmon driver: `nct6775`
+  - hwmon name: `nct6798`
+
+## Intel NUC9 EC V9 Sensors
 
 ```text
 fan1_label = CPU Fan
@@ -38,54 +44,62 @@ fan3_label = System Fan 2
 fan3_input = EC V9 register 0x421
 ```
 
-The module is read-only. It does not expose PWM controls and does not write EC registers.
+## DS2308 IT8613E Sensors
 
-## Installation
+`ds2308-it8613e-sio` exposes IT8613E fan tachometers as read-only hwmon fans.
+Channels whose tach register pair reads as invalid are hidden from hwmon.
 
-See [INSTALL.md](INSTALL.md) for DKMS installation, manual test loading, verification, and uninstall steps.
+## Install
 
-## Validate
+See [INSTALL.md](INSTALL.md).
 
-Find the hwmon device:
+Default DKMS install:
 
 ```bash
-for h in /sys/class/hwmon/hwmon*; do
-  [ "$(cat "$h/name" 2>/dev/null)" = "intel_nuc_ec" ] || continue
-  echo "hwmon=$h"
-  cat "$h"/fan*_label
-  cat "$h"/fan*_input
-done
+sudo ./scripts/install.sh
+sudo modprobe platform_fans_hwmon
 ```
 
-Expected labels:
+Platform-scoped install:
 
-```text
-CPU Fan
-System Fan 1
-System Fan 2
+```bash
+sudo ./scripts/install.sh --platform intel-nuc-ec-v9
 ```
 
-Validated on Intel NUC9i7QNX / NUC9i7QNB with fnOS kernel `6.18.18-trim`:
+## Hardware Discovery
 
-```text
-intel_nuc_ec-isa-0000
-Adapter: ISA adapter
-CPU Fan:      1755 RPM
-System Fan 1: 2030 RPM
-System Fan 2: 2180 RPM
+Before adding a new `platform_fans_hwmon` backend or platform descriptor, first check whether Linux already supports the board through an existing hwmon driver:
+
+```bash
+sudo sensors-detect --auto
+sensors
 ```
 
-Validated DKMS install:
+If `sensors-detect` recommends an existing Linux hwmon driver such as `nct6775`, prefer loading and documenting that driver instead of duplicating chip support in this project. For example, Minisforum MS-01 exposes its Nuvoton `NCT6798D` Super I/O sensors through `nct6775`:
 
-```text
-filename: /lib/modules/6.18.18-trim/updates/dkms/intel_nuc_ec_hwmon.ko
-dkms: intel-nuc-ec-hwmon/0.1.0, 6.18.18-trim, x86_64: installed
-lsmod: intel_nuc_ec_hwmon
+```bash
+sudo modprobe nct6775
+echo nct6775 | sudo tee /etc/modules-load.d/nct6775.conf
 ```
+
+Add a `platform_fans_hwmon` implementation only when existing mainline drivers cannot expose the required fan RPM values.
+
+## Contributing Platform Support
+
+See [docs/contributing-platform.md](docs/contributing-platform.md) and [docs/platform-template.md](docs/platform-template.md).
+
+Platform support must be explicitly matched and validated on real hardware. The driver does not perform speculative scanning of unknown EC, MMIO, or IO-port ranges.
 
 ## Safety
 
-This module only reads EC MMIO registers. It does not write fan control registers, does not change fan curves, and does not expose `pwm*` controls.
+Default platform support is read-only. This module does not expose PWM controls, does not change fan curves, and does not write fan-control registers.
+
+Fan control is a separate risk category and is not part of the default module.
+
+## Chinese Documentation
+
+- [README.zh_CN.md](README.zh_CN.md)
+- [INSTALL.zh_CN.md](INSTALL.zh_CN.md)
 
 ## License
 

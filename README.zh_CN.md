@@ -1,31 +1,37 @@
-# Intel NUC EC hwmon
+# Platform Fans hwmon
 
-[English](README.md)
+`platform-fans-hwmon` 是一个只读 Linux hwmon 框架，用于暴露现有内核驱动尚未支持的平台特定风扇转速传感器。
 
-Intel NUC9 EC V9 风扇转速计的只读 Linux hwmon 驱动。
+内核模块名为 `platform_fans_hwmon`。它提供通用 hwmon core、可复用读取后端和平台特定描述。
 
-本模块通过标准 hwmon ABI 暴露 Intel NUC9 EC 风扇 RPM，因此 `sensors`、CoolerControl 和监控采集器可以像读取普通 hwmon 传感器一样读取 `fan1_input`、`fan2_input` 和 `fan3_input`。
+本项目通过标准 hwmon ABI 暴露风扇 RPM，使 `sensors`、CoolerControl 和监控系统可以读取 `fan*_input` 与 `fan*_label`。
 
-## 支持的硬件
+## 支持的平台
 
-第一版支持范围刻意保持狭窄：
+见 [docs/supported-platforms.md](docs/supported-platforms.md)。
 
-- Intel NUC9 Extreme Compute Element / Kit：
-  - `NUC9i5QNB`
-  - `NUC9i7QNB`
-  - `NUC9i9QNB`
-  - `NUC9i5QNX`
-  - `NUC9i7QNX`
-  - `NUC9i9QNX`
-- Intel NUC9 Pro Compute Element / Kit：
-  - `NUC9V7QNB`
-  - `NUC9VXQNB`
-  - `NUC9V7QNX`
-  - `NUC9VXQNX`
+当前平台：
 
-模块还要求 Intel NUC EC identifier 为 `SPG_EC` 或 `ELM_EC`。
+- `intel-nuc-ec-v9`
+  - Intel NUC9 Extreme Compute Element / Kit
+  - Intel NUC9 Pro Compute Element / Kit
+  - EC identifier：`SPG_EC` 或 `ELM_EC`
+  - hwmon name：`intel_nuc_ec`
+- `ds2308-it8613e-sio`
+  - DS2308 / board `Dinson`
+  - 传感器芯片：ITE `IT8613E`
+  - 暴露有效的 `fan1` 到 `fan5` tachometer
+  - hwmon name：`ds2308_it8613e`
 
-## 暴露的传感器
+外部驱动支持的平台：
+
+- `minisforum-ms01-nct6775`
+  - 铭凡 MS-01 / Venus Series / board `AHWSA`
+  - 传感器芯片：Nuvoton `NCT6798D`
+  - 已有 Linux hwmon 驱动：`nct6775`
+  - hwmon name：`nct6798`
+
+## Intel NUC9 EC V9 传感器
 
 ```text
 fan1_label = CPU Fan
@@ -38,54 +44,57 @@ fan3_label = System Fan 2
 fan3_input = EC V9 register 0x421
 ```
 
-模块是只读的。它不暴露 PWM 控制，不写入 EC 寄存器。
+## DS2308 IT8613E 传感器
+
+`ds2308-it8613e-sio` 将 IT8613E 风扇 tachometer 以只读 hwmon fan 形式暴露。
+tach 寄存器对读取为无效值的通道不会暴露到 hwmon。
 
 ## 安装
 
-DKMS 安装、手动测试加载、验证和卸载步骤见 [INSTALL.zh_CN.md](INSTALL.zh_CN.md)。
+见 [INSTALL.zh_CN.md](INSTALL.zh_CN.md)。
 
-## 验证
-
-查找 hwmon 设备：
+默认 DKMS 安装：
 
 ```bash
-for h in /sys/class/hwmon/hwmon*; do
-  [ "$(cat "$h/name" 2>/dev/null)" = "intel_nuc_ec" ] || continue
-  echo "hwmon=$h"
-  cat "$h"/fan*_label
-  cat "$h"/fan*_input
-done
+sudo ./scripts/install.sh
+sudo modprobe platform_fans_hwmon
 ```
 
-预期 label：
+限定平台安装：
 
-```text
-CPU Fan
-System Fan 1
-System Fan 2
+```bash
+sudo ./scripts/install.sh --platform intel-nuc-ec-v9
 ```
 
-已在 Intel NUC9i7QNX / NUC9i7QNB 与 fnOS kernel `6.18.18-trim` 上验证：
+## 硬件探测
 
-```text
-intel_nuc_ec-isa-0000
-Adapter: ISA adapter
-CPU Fan:      1755 RPM
-System Fan 1: 2030 RPM
-System Fan 2: 2180 RPM
+新增 `platform_fans_hwmon` 后端或平台描述之前，先检查 Linux 是否已经通过已有 hwmon 驱动支持这块主板：
+
+```bash
+sudo sensors-detect --auto
+sensors
 ```
 
-DKMS 安装验证结果：
+如果 `sensors-detect` 推荐了 `nct6775` 这类已有 Linux hwmon 驱动，优先加载并文档化该驱动，不要在本项目里重复实现芯片支持。例如铭凡 MS-01 通过 `nct6775` 暴露 Nuvoton `NCT6798D` Super I/O 传感器：
 
-```text
-filename: /lib/modules/6.18.18-trim/updates/dkms/intel_nuc_ec_hwmon.ko
-dkms: intel-nuc-ec-hwmon/0.1.0, 6.18.18-trim, x86_64: installed
-lsmod: intel_nuc_ec_hwmon
+```bash
+sudo modprobe nct6775
+echo nct6775 | sudo tee /etc/modules-load.d/nct6775.conf
 ```
 
-## 安全性
+只有在现有 mainline 驱动无法暴露所需风扇 RPM 时，才新增 `platform_fans_hwmon` 实现。
 
-本模块只读取 EC MMIO 寄存器。它不写入风扇控制寄存器，不修改风扇曲线，也不暴露 `pwm*` 控制接口。
+## 贡献平台支持
+
+见 [docs/contributing-platform.md](docs/contributing-platform.md) 和 [docs/platform-template.md](docs/platform-template.md)。
+
+平台支持必须有明确匹配条件，并在真实硬件上验证。本驱动不会扫描未知 EC、MMIO 或 IO port 范围来猜测风扇转速。
+
+## 安全
+
+默认平台支持是只读的。本模块不暴露 PWM 控制，不修改风扇曲线，也不写入风扇控制寄存器。
+
+风扇控制属于另一类风险，不属于默认模块范围。
 
 ## 许可证
 
